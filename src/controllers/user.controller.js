@@ -199,7 +199,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
-        .json(200, req.user, "Current user fetched successfully")
+        .json(new ApiResponse(200, req.user, "Current user fetched successfully"))
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -249,6 +249,14 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     if (!avatar.url) {
         throw new ApiError(400, " error while uploding or updating avatar Avatar ")
     }
+
+    const oldAvatarImage = user?.avatar
+
+    console.log(oldAvatarImage);
+    if (oldAvatarImage) {
+        await deleteFromCloudinary(oldAvatarImage);
+    }
+
     const user = await User.findByIdAndUpdate(userId,
         {
             $set: {
@@ -286,4 +294,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 });
 
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage }  
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage
+}  
