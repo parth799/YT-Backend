@@ -293,6 +293,64 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, "Cover Image updated successfully"));
 });
 
+const getUserChannelProfile = asyncHandler(async(req,res) => {
+    const {username} = req.params
+
+    if (!username?.trim) {
+        throw new ApiError(400, "username is missing")
+    }
+    const channel = await User.aggregate([
+        {
+            $match:{
+                usename: username?.toLowerCase()
+            }
+        },
+        {
+            $lookup:{
+              from: "subscription",
+              localField:"_id",
+              foreignField: "channel",
+              as:"subscribers"
+            }
+        },
+        {
+            $lookup:{
+                from: "subscription",
+                localField:"_id",
+                foreignField: "subcriber",
+                as:"subscribedTo"
+              }
+        },
+        {
+            $addFields:{
+                aubscribersCount:{
+                    $size:"$subscribers"
+                },
+                channelSubscribedToCount:{
+                    $size: "$subscribedTo"
+                },
+                isSubscribed:{
+                    $cond:{
+                        if:{$in: [req.user?._id,"$subscribers.subscriber"]}
+                    }
+                }
+            }
+        },
+        {
+            $project:{
+                fullName:1,
+                username:1,
+                subscriberCount: 1,
+                channelSubscribedToCount:1,
+                isSubscribed:1,
+                avatar:1,
+                coverImage:1,
+                email:1
+            }
+        }
+    ]) 
+    console.log(channel);
+})
 
 export {
     registerUser,
