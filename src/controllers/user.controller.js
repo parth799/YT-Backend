@@ -323,7 +323,7 @@ const getUserChannelProfile = asyncHandler(async(req,res) => {
         },
         {
             $addFields:{
-                aubscribersCount:{
+                subscriberCount:{
                     $size:"$subscribers"
                 },
                 channelSubscribedToCount:{
@@ -350,6 +350,14 @@ const getUserChannelProfile = asyncHandler(async(req,res) => {
         }
     ]) 
     console.log(channel);
+    if(!channel?.length){
+        throw new ApiError(404, "channel does not exists!")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "channel fetch successfully"))
+    
 })
 
 export {
