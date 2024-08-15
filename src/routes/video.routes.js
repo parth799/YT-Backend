@@ -1,16 +1,20 @@
-import {Router} from "express";
+import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {
     getAllVideos,
+    punblishVideo,
 } from "../controllers/video.controller.js"
 const router = Router();
 
-router.route("/").get(getAllVideos).post(
-    verifyJWT,
-    upload.fields([
+router
+    .route("/")
+    .get(getAllVideos)   
+    .post(
+            verifyJWT,
+            upload.fields([
             {
-                name: "videofile",
+                name: "videoFile",
                 maxCount: 1,
             },
             {
@@ -18,7 +22,7 @@ router.route("/").get(getAllVideos).post(
                 maxCount: 1,
             }
         ]),
-        // publishAvideo,
-);
+        punblishVideo,
+    );
 
 export default router;
