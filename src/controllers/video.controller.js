@@ -11,11 +11,10 @@ import { ApiError } from "../utils/apiError.js";
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
-  console.log("Received query parameters:", { page, limit, query, sortBy, sortType, userId });
+  console.log("---:", { page, limit, query, sortBy, sortType, userId });
 
   const pipeline = [];
 
-  // Search stage
   if (query) {
     console.log("Adding search stage to pipeline for query:", query);
     pipeline.push({
@@ -29,7 +28,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     });
   }
 
-  // User filter stage
   if (userId) {
     console.log("Received userId:", userId);
     if (!mongoose.isValidObjectId(userId)) {
@@ -44,11 +42,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
     });
   }
 
-  // Match published videos
   console.log("Adding match stage to pipeline for published videos");
   pipeline.push({ $match: { isPublished: true } });
 
-  // Sort stage
   if (sortBy && sortType) {
     console.log("Adding sort stage to pipeline:", { sortBy, sortType });
     pipeline.push({
@@ -61,7 +57,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     pipeline.push({ $sort: { createdAt: -1 } });
   }
 
-  // Lookup stage
   console.log("Adding lookup and unwind stages to pipeline");
   pipeline.push(
     {
@@ -87,7 +82,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   console.log("Final aggregation pipeline:", JSON.stringify(pipeline, null, 2));
 
-  // Aggregation and pagination
   const videoAggregate = Video.aggregate(pipeline);
   const options = {
     page: parseInt(page, 10),
@@ -104,7 +98,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Error fetching videos");
   }
 });
-
 
 const punblishVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
@@ -233,7 +226,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         owner: { $first: "$owner" },
         isLiked: {
           $cond: {
-            if: {$in: [req.user?._id,"$likes.user"]},
+            if: { $in: [req.user?._id, "$likes.user"] },
             then: true,
             else: false
           }
@@ -242,7 +235,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        "videoFile.url":1,
+        "videoFile.url": 1,
         title: 1,
         description: 1,
         views: 1,
@@ -260,14 +253,14 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(500, "faied to fetch video")
   }
 
-  await Video.findByIdAndUpdate(videoId,{
-    $inc:{
+  await Video.findByIdAndUpdate(videoId, {
+    $inc: {
       views: 1
     }
   })
 
-  await User.findByIdAndUpdate(req.user?._id,{
-    $addToSet:{
+  await User.findByIdAndUpdate(req.user?._id, {
+    $addToSet: {
       watchHistory: videoId
     }
   })
@@ -275,14 +268,14 @@ const getVideoById = asyncHandler(async (req, res) => {
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
-  const {title, description} = req.body;
-  const {videoId} = req.params
+  const { title, description } = req.body;
+  const { videoId } = req.params
 
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "video id is invalid");
   }
 
-  if(!(title && description)){
+  if (!(title && description)) {
     throw new ApiError(400, "title is invalid");
   }
 
@@ -291,7 +284,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No video found");
   }
 
-  if(video.owner.toString() !== req.user?._id.toString()) {
+  if (video.owner.toString() !== req.user?._id.toString()) {
     throw new ApiError(400, "you are not authorized to update this video");
   }
 
@@ -299,13 +292,13 @@ const updateVideo = asyncHandler(async (req, res) => {
 
   const thumbnailLocalPath = req.file?.path;
 
-  if(!thumbnailLocalPath){
+  if (!thumbnailLocalPath) {
     throw new ApiError(400, "you are not authorized to delete");
   }
 
   const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
-  if(!thumbnail){
+  if (!thumbnail) {
     throw new ApiError(400, "thumbnail not found");
   }
 
@@ -346,7 +339,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No video found");
   }
 
-  if (video.owner.toString()!== req.user?._id.toString()) {
+  if (video.owner.toString() !== req.user?._id.toString()) {
     throw new ApiError(400, "you are not authorized to delete this video");
   }
 
@@ -372,4 +365,35 @@ const deleteVideo = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, {}, "video deleted successfully!"))
 })
 
-export { getAllVideos, punblishVideo, getVideoById, updateVideo, deleteVideo };
+
+const togglePublishStatus = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if(!isValidObjectId(videoId)) {
+    throw new ApiError(400, "invalid video id")
+  }
+
+  const video = await Video.findById(videoId);
+
+  if(video.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(400, "you are not authorized to publish this video")
+  }
+
+  const toggledVideoPubllish = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $set: {
+        isPublished:!video?.isPublished
+      }
+    },
+    { new: true }
+  )
+
+  if(!toggledVideoPubllish) {
+    throw new ApiError(500, "failed to toggle publish status")
+  }
+ 
+  return res.status(200).json(new ApiResponse(200, {isPublished: toggledVideoPubllish.isPublished}, "video publish status toggled successfully!"))
+})
+
+export { getAllVideos, punblishVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus };
