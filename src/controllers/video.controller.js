@@ -333,4 +333,43 @@ const updateVideo = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, updatedVideo, "video updated successfully"));
 });
 
-export { getAllVideos, punblishVideo, getVideoById, updateVideo };
+const deleteVideo = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "video id is invalid");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(400, "No video found");
+  }
+
+  if (video.owner.toString()!== req.user?._id.toString()) {
+    throw new ApiError(400, "you are not authorized to delete this video");
+  }
+
+  const videoDeleted = await Video.findByIdAndDelete(video?._id);
+
+  if (!videoDeleted) {
+    throw new ApiError(400, "faile to delete video please try again");
+  }
+
+  if (videoDeleted) {
+    await deleteOnCloudinary(video.thumbnail.public_id)
+    await deleteOnCloudinary(video.videoFile.public_id)
+  }
+
+  await Like.deleteMany({
+    video: videoId
+  })
+
+  await Comment.deleteMany({
+    video: videoId
+  })
+
+  return res.status(200).json(new ApiResponse(200, {}, "video deleted successfully!"))
+})
+
+export { getAllVideos, punblishVideo, getVideoById, updateVideo, deleteVideo };
