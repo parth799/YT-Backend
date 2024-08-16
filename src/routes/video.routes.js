@@ -5,6 +5,7 @@ import {
     getAllVideos,
     getVideoById,
     punblishVideo,
+    updateVideo,
 } from "../controllers/video.controller.js"
 const router = Router();
 
@@ -25,5 +26,7 @@ router
         ]),
         punblishVideo,
     );
-router.route("/v/:videoId").get(verifyJWT, getVideoById)
+router.route("/v/:videoId")
+    .get(verifyJWT, getVideoById)
+    .patch(verifyJWT, upload.single("thumbnail") ,updateVideo)
 export default router;

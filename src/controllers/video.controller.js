@@ -274,5 +274,63 @@ const getVideoById = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, video[0], "video fetched successfully"));
 })
 
+const updateVideo = asyncHandler(async (req, res) => {
+  const {title, description} = req.body;
+  const {videoId} = req.params
 
-export { getAllVideos, punblishVideo,getVideoById };
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "video id is invalid");
+  }
+
+  if(!(title && description)){
+    throw new ApiError(400, "title is invalid");
+  }
+
+  const video = await Video.findById(videoId);
+  if (!videoId) {
+    throw new ApiError(400, "No video found");
+  }
+
+  if(video.owner.toString() !== req.user?._id.toString()) {
+    throw new ApiError(400, "you are not authorized to update this video");
+  }
+
+  const thumbnailToDelete = video.thumbnail.public_id;
+
+  const thumbnailLocalPath = req.file?.path;
+
+  if(!thumbnailLocalPath){
+    throw new ApiError(400, "you are not authorized to delete");
+  }
+
+  const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
+
+  if(!thumbnail){
+    throw new ApiError(400, "thumbnail not found");
+  }
+
+  const updatedVideo = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $set: {
+        title,
+        description,
+        thumbnail: {
+          public_id: thumbnail.public_id,
+          url: thumbnail.url,
+        },
+      }
+    },
+    { new: true }
+  );
+
+  if (!updatedVideo) {
+    throw new ApiError(500, "faile to update video please try again");
+  }
+  if (updatedVideo) {
+    await deleteOnCloudinary(thumbnailToDelete)
+  }
+  return res.status(200).json(new ApiResponse(200, updatedVideo, "video updated successfully"));
+});
+
+export { getAllVideos, punblishVideo, getVideoById, updateVideo };
