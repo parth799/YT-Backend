@@ -8,98 +8,8 @@ import mongoose, { isValidObjectId } from "mongoose";
 import { Like } from "../models/like.model.js";
 import { ApiError } from "../utils/apiError.js";
 
-const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
-  console.log("---:", { page, limit, query, sortBy, sortType, userId });
-
-  const pipeline = [];
-
-  if (query) {
-    console.log("Adding search stage to pipeline for query:", query);
-    pipeline.push({
-      $search: {
-        index: "search-videos",
-        text: {
-          query: query,
-          path: ["title", "description"]
-        }
-      }
-    });
-  }
-
-  if (userId) {
-    console.log("Received userId:", userId);
-    if (!mongoose.isValidObjectId(userId)) {
-      console.error("Invalid userId:", userId);
-      throw new ApiError(400, "Invalid userId");
-    }
-
-    pipeline.push({
-      $match: {
-        owner: new mongoose.Types.ObjectId(userId)
-      }
-    });
-  }
-
-  console.log("Adding match stage to pipeline for published videos");
-  pipeline.push({ $match: { isPublished: true } });
-
-  if (sortBy && sortType) {
-    console.log("Adding sort stage to pipeline:", { sortBy, sortType });
-    pipeline.push({
-      $sort: {
-        [sortBy]: sortType === "asc" ? 1 : -1
-      }
-    });
-  } else {
-    console.log("Adding default sort stage to pipeline");
-    pipeline.push({ $sort: { createdAt: -1 } });
-  }
-
-  console.log("Adding lookup and unwind stages to pipeline");
-  pipeline.push(
-    {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "ownerDetails",
-        pipeline: [
-          {
-            $project: {
-              username: 1,
-              avatar: 1
-            }
-          }
-        ]
-      }
-    },
-    {
-      $unwind: "$ownerDetails"
-    }
-  );
-
-  console.log("Final aggregation pipeline:", JSON.stringify(pipeline, null, 2));
-
-  const videoAggregate = Video.aggregate(pipeline);
-  const options = {
-    page: parseInt(page, 10),
-    limit: parseInt(limit, 10)
-  };
-
-  console.log("Pagination options:", options);
-  try {
-    const video = await Video.aggregatePaginate(videoAggregate, options);
-    console.log("Fetched videos:", video);
-    return res.status(200).json(new ApiResponse(200, video, "Videos fetched successfully"));
-  } catch (error) {
-    console.error("Error during aggregation:", error);
-    throw new ApiError(500, "Error fetching videos");
-  }
-});
-
-const punblishVideo = asyncHandler(async (req, res) => {
+const addVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   if ([title, description].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "Invalid title or description");
@@ -125,7 +35,7 @@ const punblishVideo = asyncHandler(async (req, res) => {
   if (!thumbnail) {
     throw new ApiError(400, "Error while uploading thumbnail");
   }
-  console.log(">>>>>>>>>>>");
+  // console.log(">>>>>>>>>>>");
 
   const video = await Video.create({
     title,
@@ -142,7 +52,7 @@ const punblishVideo = asyncHandler(async (req, res) => {
     owner: req.user?._id,
     isPublished: false,
   });
-  console.log("<<<<<<<<<<>>>>>>>>>>");
+  // console.log("<<<<<<<<<<>>>>>>>>>>");
 
   const videoUploaded = await Video.findById(video._id);
 
@@ -170,14 +80,14 @@ const getVideoById = asyncHandler(async (req, res) => {
         _id: new mongoose.Types.ObjectId(videoId)
       }
     },
-    {
-      $lookup: {
-        from: "likes",
-        localField: "_id",
-        foreignField: "video",
-        as: "likes",
-      }
-    },
+    // {
+    //   $lookup: {
+    //     from: "likes",
+    //     localField: "_id",
+    //     foreignField: "video",
+    //     as: "likes",
+    //   }
+    // },
     {
       $lookup: {
         from: "users",
@@ -396,4 +306,95 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, {isPublished: toggledVideoPubllish.isPublished}, "video publish status toggled successfully!"))
 })
 
-export { getAllVideos, punblishVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus };
+const getAllVideos = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
+  // console.log("---:", { page, limit, query, sortBy, sortType, userId });
+
+  const pipeline = [];
+
+  if (query) {
+    // console.log("Adding search stage to pipeline for query:", query);
+    pipeline.push({
+      $search: {
+        index: "search-videos",
+        text: {
+          query: query,
+          path: ["title", "description"]
+        }
+      }
+    });
+  }
+
+  if (userId) {
+    console.log("Received userId:", userId);
+    if (!mongoose.isValidObjectId(userId)) {
+      console.error("Invalid userId:", userId);
+      throw new ApiError(400, "Invalid userId");
+    }
+
+    pipeline.push({
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId)
+      }
+    });
+  }
+
+  // console.log("Adding match stage to pipeline for published videos");
+  pipeline.push({ $match: { isPublished: true } });
+
+  if (sortBy && sortType) {
+    // console.log("Adding sort stage to pipeline:", { sortBy, sortType });
+    pipeline.push({
+      $sort: {
+        [sortBy]: sortType === "asc" ? 1 : -1
+      }
+    });
+  } else {
+    // console.log("Adding default sort stage to pipeline");
+    pipeline.push({ $sort: { createdAt: -1 } });
+  }
+
+  // console.log("Adding lookup and unwind stages to pipeline");
+  pipeline.push(
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              avatar: 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      $unwind: "$ownerDetails"
+    }
+  );
+
+  // console.log("Final aggregation pipeline:", JSON.stringify(pipeline, null, 2));
+
+  const videoAggregate = Video.aggregate(pipeline);
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10)
+  };
+
+  // console.log("Pagination options:", options);
+  try {
+    const video = await Video.aggregatePaginate(videoAggregate, options);
+    console.log("Fetched videos:", video);
+    return res.status(200).json(new ApiResponse(200, video, "Videos fetched successfully"));
+  } catch (error) {
+    console.error("Error during aggregation:", error);
+    throw new ApiError(500, "Error fetching videos");
+  }
+});
+
+export { getAllVideos, addVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus };

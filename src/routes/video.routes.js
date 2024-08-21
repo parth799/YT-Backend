@@ -5,7 +5,7 @@ import {
     deleteVideo,
     getAllVideos,
     getVideoById,
-    punblishVideo,
+    addVideo,
     togglePublishStatus,
     updateVideo,
 } from "../controllers/video.controller.js"
@@ -26,7 +26,7 @@ router
                 maxCount: 1,
             }
         ]),
-        punblishVideo,
+        addVideo,
     );
 router.route("/v/:videoId")
     .get(verifyJWT, getVideoById)
