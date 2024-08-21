@@ -69,7 +69,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
           {
             $project: {
               username: 1,
-              "avatar.url": 1
+              avatar: 1
             }
           }
         ]
@@ -172,7 +172,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "users",
+        from: "likes",
         localField: "_id",
         foreignField: "video",
         as: "likes",
@@ -213,7 +213,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           {
             $project: {
               username: 1,
-              "avatar.url": 1,
+              avatar: 1,
               subscribersCount: 1,
               isSubscribed: 1
             }
@@ -226,7 +226,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         owner: { $first: "$owner" },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$likes.user"] },
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
             then: true,
             else: false
           }
@@ -235,7 +235,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        "videoFile.url": 1,
+        videoFile: 1,
         title: 1,
         description: 1,
         views: 1,

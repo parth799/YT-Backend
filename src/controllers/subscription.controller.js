@@ -35,16 +35,15 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const { channelId } = req.params;
 
     if (!isValidObjectId(channelId)) {
-        throw new ApiError(400, "Invalid channelId")
+        throw new ApiError(400, "Invalid channelId");
     }
 
-    const channelid = new mongoose.Types.ObjectId(channelId);
-    console.log(">>>>>>",channelid);
+    const channelObjectId = new mongoose.Types.ObjectId(channelId);
 
     const subscribers = await Subscription.aggregate([
         {
             $match: {
-                channel: channelid
+                channel: channelObjectId
             }
         },
         {
@@ -68,21 +67,21 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
                                 $cond: {
                                     if: {
                                         $in: [
-                                            channelId,
-                                            "$subscribedToSubscriber.subscriber",
-                                        ],
+                                            channelObjectId,
+                                            "$subscribedToSubscriber.subscriber"
+                                        ]
                                     },
                                     then: true,
-                                    else: false,
-                                },
+                                    else: false
+                                }
                             },
                             subscribersCount: {
-                                $size: "$subscribedToSubscriber",
-                            },
-                        },
-                    },
-                ],
-            },
+                                $size: "$subscribedToSubscriber"
+                            }
+                        }
+                    }
+                ]
+            }
         },
         {
             $unwind: "$subscriber"
@@ -94,25 +93,31 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
                     _id: 1,
                     username: 1,
                     fullName: 1,
-                    "avatar.url": 1,
+                    avatar: 1,
                     subscribedToSubscriber: 1,
-                    subscribersCount: 1,
+                    subscribersCount: 1
                 }
             }
         }
     ]);
 
-    return res.status(200).json(new ApiResponse(200, subscribers, "Subscribed users fetched successfully"))
-})
+    return res.status(200).json(new ApiResponse(200, subscribers, "Subscribed users fetched successfully"));
+});
+
 
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     const { subscriberId } = req.params;
-    console.log("subscriberId", subscriberId);
+
+    if (!isValidObjectId(subscriberId)) {
+        throw new ApiError(400, "Invalid subscriberId");
+    }
+
+    const subscriberObjectId = new mongoose.Types.ObjectId(subscriberId);
 
     const subscribedChannels = await Subscription.aggregate([
         {
             $match: {
-                subscriber: new mongoose.Types.ObjectId(subscriberId),
+                subscriber: subscriberObjectId,
             },
         },
         {
@@ -133,15 +138,15 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                     {
                         $addFields: {
                             latestVideo: {
-                                $last: "$videos",
-                            },
-                        },
-                    },
-                ],
-            },
+                                $arrayElemAt: ["$videos", -1] 
+                            }
+                        }
+                    }
+                ]
+            }
         },
         {
-            $unwind: "$subscribedChannel",
+            $unwind: "$subscribedChannel"
         },
         {
             $project: {
@@ -150,32 +155,24 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                     _id: 1,
                     username: 1,
                     fullName: 1,
-                    "avatar.url": 1,
+                    avatar: 1,
                     latestVideo: {
                         _id: 1,
-                        "videoFile.url": 1,
-                        "thumbnail.url": 1,
+                        videoFile: 1,
+                        thumbnail: 1,
                         owner: 1,
                         title: 1,
                         description: 1,
                         duration: 1,
                         createdAt: 1,
                         views: 1
-                    },
-                },
-            },
-        },
+                    }
+                }
+            }
+        }
     ]);
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                subscribedChannels,
-                "subscribed channels fetched successfully"
-            )
-        );
+    return res.status(200).json(new ApiResponse(200, subscribedChannels, "Subscribed channels fetched successfully"));
 });
 
 
