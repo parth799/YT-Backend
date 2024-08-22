@@ -68,4 +68,28 @@ const updateComment = asyncHandler(async(req, res) => {
     return res.status(200).json(new ApiResponse(200, updatedComment, "comment updated successfully!"));
 })
 
-export {addComment, updateComment}
+const deleteComment = asyncHandler(async(req, res) => {
+    const {commentId} = req.params;
+
+    const comment = await Comment.findById(commentId);
+    
+    if (!comment) {
+        throw new ApiError(400, "Comment not found");
+    }
+
+    if (comment?.owner.toString()!== req.user?._id.toString()) {
+        throw new ApiError(400, "You are not authorized to delete this comment!");
+    }
+
+    await Comment.findByIdAndDelete(commentId);
+
+    await Like.deleteMany({
+        comment: commentId,
+        likedBy: req.user
+    })
+
+    return res.status(200).json(new ApiResponse(200, {commentId}, "comment deleted successfully!"));
+})
+
+
+export {addComment, updateComment, deleteComment}
