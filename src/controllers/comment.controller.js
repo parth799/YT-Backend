@@ -91,5 +91,83 @@ const deleteComment = asyncHandler(async(req, res) => {
     return res.status(200).json(new ApiResponse(200, {commentId}, "comment deleted successfully!"));
 })
 
+const getCommentsByVideo = asyncHandler(async(req, res) => {
+    const { videoId } = req.params;
+    const {page = 1 , limit = 10} = req.body;
 
-export {addComment, updateComment, deleteComment}
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+        throw new ApiError(400, "Video not found");
+    }
+
+    const commentsAgg = Comment.aggregate([
+        {
+            $match:{
+                video: new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $lookup:{
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner"
+            }
+        },
+        {
+            $lookup:{
+                from: "likes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "likes",
+            }
+        },
+        {
+            $addFields:{
+                likesCounnt:{
+                    $size: "$likes"
+                },
+                owner:{
+                    $first:"$owner"
+                },
+                isLiked:{
+                    $cond:{
+                        if:{$in: [req.user?._id, "$likes.likedBy"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $sort:{
+                createdAt: -1
+            }
+        },
+        {
+            $project: {
+                content: 1,
+                createdAt: 1,
+                likesCounnt:1,
+                owner: {
+                    _id: 1,
+                    username: 1,
+                    avatar: 1
+                },
+                isLiked: 1
+            }
+        }
+    ])
+
+    const options = {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+    }
+
+    const comments = await Comment.aggregatePaginate(commentsAgg, options);
+
+    return res.status(200).json(new ApiResponse(200, comments, "comments retrieved successfully!"));
+})
+
+export {addComment, updateComment, deleteComment, getCommentsByVideo}
