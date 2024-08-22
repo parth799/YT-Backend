@@ -88,4 +88,12 @@ const getLikedVideos = asyncHandler(async(req, res) => {
     ]);
     return res.status(200).json(new ApiResponse(200, likedVideosAgg,"liked videos fetched successfully!f"));
 })
+
+const toggleCommentLike= asyncHandler(async(req, res) => {
+    const { commentId } = req.params;
+    if (!isValidObjectId(commentId)) {
+        throw new ApiError(400, "Comment id is invalid");
+    }
+})
+
 export { toggleVideoLike ,getLikedVideos}
