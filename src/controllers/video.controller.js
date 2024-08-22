@@ -80,14 +80,14 @@ const getVideoById = asyncHandler(async (req, res) => {
         _id: new mongoose.Types.ObjectId(videoId)
       }
     },
-    // {
-    //   $lookup: {
-    //     from: "likes",
-    //     localField: "_id",
-    //     foreignField: "video",
-    //     as: "likes",
-    //   }
-    // },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      }
+    },
     {
       $lookup: {
         from: "users",
