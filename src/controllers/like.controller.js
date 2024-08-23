@@ -94,6 +94,23 @@ const toggleCommentLike= asyncHandler(async(req, res) => {
     if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "Comment id is invalid");
     }
+
+    const likedAlready = await Like.findOne({
+        comment: commentId,
+        likedBy: req.user?._id,
+    });
+
+    if (likedAlready) {
+        await Like.findByIdAndDelete(likedAlready._id);
+        return res.status(200).json(new ApiResponse(200, { likedBy: false }, "Disliked successfully"));
+    }
+    
+    await Like.create({
+        comment: commentId,
+        likedBy: req.user?._id,
+    })
+
+    return res.status(200).json(new ApiResponse(200, { likedBy: true }, "Liked successfully"));
 })
 
-export { toggleVideoLike ,getLikedVideos}
+export { toggleVideoLike ,getLikedVideos, toggleCommentLike}
