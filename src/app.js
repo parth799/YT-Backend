@@ -21,8 +21,6 @@ app.use(express.static("public"))
 
 app.use(cookieParser());
 
-
-//  router declaration
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/video", videoRouter)
 app.use("/api/v1/subscriptions", subscriptionRouter)
