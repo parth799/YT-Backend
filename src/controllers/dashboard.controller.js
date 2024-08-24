@@ -65,6 +65,59 @@ const getChannelStats = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, channelStatus, "Channel stats fetched successfully"));
 })
 
+const getChannelVideos = asyncHandler(async(req, res) => {
+    const userId = req.user?._id;
+
+    const videos = await Video.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup:{
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "likes"
+            }
+        },
+        {
+            $addFields:{
+                createdAt:{
+                    $dateToParts: {date:"$createdAt"}
+                },
+                likesCount:{
+                    $size:"$likes"
+                }
+            }
+        },
+        {
+            $sort: {
+                videoViews: -1
+            }
+        },
+        {
+            $project:{
+                _id: 1,
+                videoFile: 1,
+                thumbnail: 1,
+                title: 1,
+                description: 1,
+                createdAt: {
+                    year:1,
+                    month:1,
+                    day:1
+                },
+                ispublished:1,
+                likesCount: 1
+            }
+        }
+    ])
+    return res.status(200).json(new ApiResponse(200, videos, "Channel videos fetched successfully"));
+})
+
+
 export {
-    getChannelStats
+    getChannelStats, getChannelVideos
 }
