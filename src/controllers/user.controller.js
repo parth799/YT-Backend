@@ -277,19 +277,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatar.url) {
     throw new ApiError(400, " error while uploding or updating avatar Avatar ");
   }
-
-  const oldAvatarImage = user?.avatar;
-
-  console.log(oldAvatarImage);
-  if (oldAvatarImage) {
-    await deleteFromCloudinary(oldAvatarImage);
-  }
-
-  
+ 
   const user = await User.findById(req.user._id).select("avatar");
   const avatarToDelete = user.avatar.public_id;
-
-
   const updatedUser = await User.findByIdAndUpdate(
     userId,
     {
