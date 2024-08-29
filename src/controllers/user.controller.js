@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudnary.js";
+import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -122,6 +122,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "None"
   };
   return res
     .status(200)
@@ -155,6 +156,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "None"
   };
   return res
     .status(200)
@@ -164,50 +166,43 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+  const incomingRefreshToken = req.cookies?.refreshToken || req.body.refreshToken;
 
   if (!incomingRefreshToken) {
     throw new ApiError(401, "unauthorized request");
   }
 
-  try {
-    const decodetToken = jwt.verify(
-      incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
+  const user = await User.findOne({
+    refreshToken: incomingRefreshToken
+  });
 
-    const user = await User.findById(decodetToken?._id);
-    if (!user) {
-      throw new ApiError(401, "In valid refresh token");
-    }
-
-    if (incomingRefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "Refresh token is expired or used");
-    }
-
-    const options = {
-      httpOnly: true,
-      secure: true,
-    };
-
-    const { accessToken, neweRreshToken } =
-      await generateAccessAndRefreshTokens(user._id);
-
-    return res
-      .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", neweRreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          { accessToken, refreshToken: neweRreshToken },
-          "AccessToken successfully"
-        )
-      );
-  } catch (error) {
-    throw new ApiError(401, error?.message || "Invalid Refresh token");
+  if (!user) {
+    throw new ApiError(401, "Invalid refresh token");
   }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None"
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          accessToken,
+          refreshToken
+        },
+        "Access token refreshed"
+      )
+    )
+
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
@@ -266,33 +261,31 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
-  const userId = req.user?._id;
-
-  if (!userId) {
-    throw new ApiError(401, "Unauthorized request");
-  }
-  const avatarLocalPath = req.files?.path;
+  const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar file is missing!");
+    throw new ApiError(400, "Avatar file is missing");
   }
+
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   if (!avatar.url) {
-    throw new ApiError(400, " error while uploding or updating avatar Avatar ");
+    throw new ApiError(400, "Error while uploading avatar");
   }
 
   const user = await User.findById(req.user._id).select("avatar");
+
   const avatarToDelete = user.avatar.public_id;
+
   const updatedUser = await User.findByIdAndUpdate(
-    userId,
+    req.user?._id,
     {
       $set: {
         avatar: {
           public_id: avatar.public_id,
           url: avatar.secure_url
         }
-      },
+      }
     },
     { new: true }
   ).select("-password");
@@ -303,7 +296,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, updatedUser, "Avatar updated successfully"));
+    .json(
+      new ApiResponse(200, updatedUser, "Avatar update successfull")
+    )
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {

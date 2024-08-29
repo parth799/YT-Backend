@@ -132,7 +132,7 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     }, {
       $addFields: {
-        likeCount: { $size: "$likes" },
+        likesCount: { $size: "$likes" },
         owner: { $first: "$owner" },
         isLiked: {
           $cond: {
