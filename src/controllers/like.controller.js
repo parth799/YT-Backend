@@ -28,7 +28,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { likedBy: true }, "Liked successfully"));
 })
 
-const getLikedVideos = asyncHandler(async(req, res) => {
+const getLikedVideos = asyncHandler(async (req, res) => {
     const likedVideosAgg = await Like.aggregate([
         {
             $match: {
@@ -43,41 +43,41 @@ const getLikedVideos = asyncHandler(async(req, res) => {
                 as: "likedVideo",
                 pipeline: [
                     {
-                        $lookup:{
-                            from:"users",
-                            localField:"owner",
-                            foreignField:"_id",
-                            as:"ownerDetails"
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "ownerDetails"
                         }
                     },
                     {
-                        $unwind:"$ownerDetails"
+                        $unwind: "$ownerDetails"
                     }
                 ]
             },
         },
         {
-            $unwind:"$likedVideo"
+            $unwind: "$likedVideo"
         },
         {
-            $sort:{
+            $sort: {
                 createdAt: -1,
             },
         },
         {
-            $project:{
+            $project: {
                 _id: 0,
-                likedVideo:{
+                likedVideo: {
                     _id: 1,
-                    videoFile: 1,
-                    thumbnail: 1,
+                    "videoFile.url": 1,
+                    "thumbnail.url": 1,
                     owner: 1,
                     title: 1,
                     description: 1,
                     duration: 1,
                     createdAt: 1,
-                    isPublished:1,
-                    ownerDetails:{
+                    isPublished: 1,
+                    ownerDetails: {
                         username: 1,
                         fullName: 1,
                         "avatar.url": 1
@@ -86,10 +86,10 @@ const getLikedVideos = asyncHandler(async(req, res) => {
             }
         }
     ]);
-    return res.status(200).json(new ApiResponse(200, likedVideosAgg,"liked videos fetched successfully!f"));
+    return res.status(200).json(new ApiResponse(200, likedVideosAgg, "liked videos fetched successfully!f"));
 })
 
-const toggleCommentLike= asyncHandler(async(req, res) => {
+const toggleCommentLike = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
     if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "Comment id is invalid");
@@ -104,7 +104,7 @@ const toggleCommentLike= asyncHandler(async(req, res) => {
         await Like.findByIdAndDelete(likedAlready._id);
         return res.status(200).json(new ApiResponse(200, { likedBy: false }, "Disliked successfully"));
     }
-    
+
     await Like.create({
         comment: commentId,
         likedBy: req.user?._id,
@@ -113,4 +113,4 @@ const toggleCommentLike= asyncHandler(async(req, res) => {
     return res.status(200).json(new ApiResponse(200, { likedBy: true }, "Liked successfully"));
 })
 
-export { toggleVideoLike ,getLikedVideos, toggleCommentLike}
+export { toggleVideoLike, getLikedVideos, toggleCommentLike }

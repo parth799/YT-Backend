@@ -145,7 +145,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        videoFile: 1,
+        "videoFile.url": 1,
         title: 1,
         description: 1,
         views: 1,

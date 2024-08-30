@@ -236,6 +236,8 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   }
 
   const { fullName, email } = req.body;
+  console.log(fullName, email);
+  
   if (!fullName || !email) {
     throw new ApiError(400, "Name and email are required");
   }
@@ -352,41 +354,41 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const channel = await User.aggregate([
     {
       $match: {
-        username: username?.toLowerCase(),
-      },
+        username: username?.toLowerCase()
+      }
     },
     {
       $lookup: {
-        from: "subscription",
+        from: "subscriptions",
         localField: "_id",
         foreignField: "channel",
-        as: "subscribers",
-      },
+        as: "subscribers"
+      }
     },
     {
       $lookup: {
-        from: "subscription",
+        from: "subscriptions",
         localField: "_id",
         foreignField: "subscriber",
-        as: "subscribedTo",
-      },
+        as: "subscribedTo"
+      }
     },
     {
       $addFields: {
         subcribersCount: {
-          $size: "$subscribers",
+          $size: "$subscribers"
         },
         channelsSubscribedToCount: {
-          $size: "$subscribedTo",
+          $size: "$subscribedTo"
         },
         isSubscribed: {
           $cond: {
             if: { $in: [req.user?._id, "$subscribers.subscriber"] },
             then: true,
-            else: false,
-          },
-        },
-      },
+            else: false
+          }
+        }
+      }
     },
     {
       $project: {
@@ -397,9 +399,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         coverImage: 1,
         subcribersCount: 1,
         channelsSubscribedToCount: 1,
-        isSubscribed: 1,
-      },
-    },
+        isSubscribed: 1
+      }
+    }
   ]);
 
   console.log(channel);

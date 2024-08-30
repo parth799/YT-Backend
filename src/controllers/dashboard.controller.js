@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Video } from "../models/video.model.js";
-import {Subscription } from "../models/subscription.model.js";
+import { Subscription } from "../models/subscription.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -15,7 +15,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
             },
         },
         {
-            $group:{
+            $group: {
                 _id: null,
                 subscribersCount: { $sum: 1 }
             }
@@ -29,7 +29,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
             }
         },
         {
-            $lookup:{
+            $lookup: {
                 from: "likes",
                 localField: "_id",
                 foreignField: "video",
@@ -37,16 +37,16 @@ const getChannelStats = asyncHandler(async (req, res) => {
             }
         },
         {
-            $project:{
-                totalLikes:{
+            $project: {
+                totalLikes: {
                     $size: "$likes"
                 },
-                totalViews:"$views",
+                totalViews: "$views",
                 totalVideos: 1
             }
         },
         {
-            $group:{
+            $group: {
                 _id: null,
                 totalVideos: { $sum: 1 },
                 totalLikes: { $sum: "$totalLikes" },
@@ -65,7 +65,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, channelStatus, "Channel stats fetched successfully"));
 })
 
-const getChannelVideos = asyncHandler(async(req, res) => {
+const getChannelVideos = asyncHandler(async (req, res) => {
     const userId = req.user?._id;
 
     const videos = await Video.aggregate([
@@ -75,7 +75,7 @@ const getChannelVideos = asyncHandler(async(req, res) => {
             }
         },
         {
-            $lookup:{
+            $lookup: {
                 from: "likes",
                 localField: "_id",
                 foreignField: "video",
@@ -83,12 +83,12 @@ const getChannelVideos = asyncHandler(async(req, res) => {
             }
         },
         {
-            $addFields:{
-                createdAt:{
-                    $dateToParts: {date:"$createdAt"}
+            $addFields: {
+                createdAt: {
+                    $dateToParts: { date: "$createdAt" }
                 },
-                likesCount:{
-                    $size:"$likes"
+                likesCount: {
+                    $size: "$likes"
                 }
             }
         },
@@ -98,18 +98,18 @@ const getChannelVideos = asyncHandler(async(req, res) => {
             }
         },
         {
-            $project:{
+            $project: {
                 _id: 1,
-                videoFile: 1,
-                thumbnail: 1,
+                "videoFile.url": 1,
+                "thumbnail.url": 1,
                 title: 1,
                 description: 1,
                 createdAt: {
-                    year:1,
-                    month:1,
-                    day:1
+                    year: 1,
+                    month: 1,
+                    day: 1
                 },
-                ispublished:1,
+                ispublished: 1,
                 likesCount: 1
             }
         }
