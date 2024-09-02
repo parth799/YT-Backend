@@ -279,13 +279,13 @@ const deleteVideo = asyncHandler(async (req, res) => {
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  if(!isValidObjectId(videoId)) {
+  if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "invalid video id")
   }
 
   const video = await Video.findById(videoId);
 
-  if(video.owner.toString() !== req.user._id.toString()) {
+  if (video.owner.toString() !== req.user._id.toString()) {
     throw new ApiError(400, "you are not authorized to publish this video")
   }
 
@@ -293,69 +293,72 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     videoId,
     {
       $set: {
-        isPublished:!video?.isPublished
+        isPublished: !video?.isPublished
       }
     },
     { new: true }
   )
 
-  if(!toggledVideoPubllish) {
+  if (!toggledVideoPubllish) {
     throw new ApiError(500, "failed to toggle publish status")
   }
- 
-  return res.status(200).json(new ApiResponse(200, {isPublished: toggledVideoPubllish.isPublished}, "video publish status toggled successfully!"))
+
+  return res.status(200).json(new ApiResponse(200, { isPublished: toggledVideoPubllish.isPublished }, "video publish status toggled successfully!"))
 })
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-
-  // console.log("---:", { page, limit, query, sortBy, sortType, userId });
-
+  console.log(">>>>", query);
   const pipeline = [];
+  const isAtlasSearchAvailable = process.env.USE_ATLAS_SEARCH === 'true';
 
   if (query) {
-    // console.log("Adding search stage to pipeline for query:", query);
-    pipeline.push({
-      $search: {
-        index: "search-videos",
-        text: {
-          query: query,
-          path: ["title", "description"]
-        }
-      }
-    });
+    if (isAtlasSearchAvailable) {
+      pipeline.push({
+        $search: {
+          index: "search-videos",
+          text: {
+            query: query,
+            path: ["title", "description"],
+          },
+        },
+      });
+    } else {
+      pipeline.push({
+        $match: {
+          $or: [
+            { title: { $regex: query, $options: "i" } },
+            { description: { $regex: query, $options: "i" } },
+          ],
+        },
+      });
+    }
   }
 
   if (userId) {
-    console.log("Received userId:", userId);
-    if (!mongoose.isValidObjectId(userId)) {
-      console.error("Invalid userId:", userId);
+    if (!isValidObjectId(userId)) {
       throw new ApiError(400, "Invalid userId");
     }
 
     pipeline.push({
       $match: {
-        owner: new mongoose.Types.ObjectId(userId)
-      }
+        owner: new mongoose.Types.ObjectId(userId),
+      },
     });
   }
 
-  // console.log("Adding match stage to pipeline for published videos");
   pipeline.push({ $match: { isPublished: true } });
 
   if (sortBy && sortType) {
-    // console.log("Adding sort stage to pipeline:", { sortBy, sortType });
     pipeline.push({
       $sort: {
-        [sortBy]: sortType === "asc" ? 1 : -1
-      }
+        [sortBy]: sortType === "asc" ? 1 : -1,
+      },
     });
   } else {
-    // console.log("Adding default sort stage to pipeline");
     pipeline.push({ $sort: { createdAt: -1 } });
   }
 
-  // console.log("Adding lookup and unwind stages to pipeline");
   pipeline.push(
     {
       $lookup: {
@@ -367,34 +370,30 @@ const getAllVideos = asyncHandler(async (req, res) => {
           {
             $project: {
               username: 1,
-              "avatar.url": 1
-            }
-          }
-        ]
-      }
+              "avatar.url": 1,
+            },
+          },
+        ],
+      },
     },
     {
-      $unwind: "$ownerDetails"
+      $unwind: "$ownerDetails",
     }
   );
 
-  // console.log("Final aggregation pipeline:", JSON.stringify(pipeline, null, 2));
-
   const videoAggregate = Video.aggregate(pipeline);
+
   const options = {
     page: parseInt(page, 10),
-    limit: parseInt(limit, 10)
+    limit: parseInt(limit, 10),
   };
 
-  // console.log("Pagination options:", options);
-  try {
-    const video = await Video.aggregatePaginate(videoAggregate, options);
-    console.log("Fetched videos:", video);
-    return res.status(200).json(new ApiResponse(200, video, "Videos fetched successfully"));
-  } catch (error) {
-    console.error("Error during aggregation:", error);
-    throw new ApiError(500, "Error fetching videos");
-  }
+  const video = await Video.aggregatePaginate(videoAggregate, options);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Videos fetched successfully"));
 });
+
 
 export { getAllVideos, addVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus };
