@@ -233,6 +233,13 @@ const getPlaylistbyId = asyncHandler(async (req, res) => {
     if (!playlistVideos) {
         throw new ApiError(400, "Playlist not found");
     }
+    if (!playlistVideos || playlistVideos.length === 0) {
+        return res.status(200).json(new ApiResponse(200, {
+            name: playlist.name,
+            description: playlist.description
+        }, "Playlist retrieved successfully with no videos!"));
+    }
+
 
     return res.status(200).json(new ApiResponse(200, playlistVideos[0], "Playlist retrieved successfully!"))
 })
