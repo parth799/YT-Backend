@@ -2,12 +2,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.model.js";
 import { User } from "../models/user.model.js";
 import { Comment } from "../models/comment.model.js";
-import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudnary.js";
+import { uploadOnCloudinary, deleteOnCloudinary, uploadVideoOnVdoCipher } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose, { isValidObjectId } from "mongoose";
 import { Like } from "../models/like.model.js";
 import { ApiError } from "../utils/apiError.js";
-
+import axios from "axios";
 
 const addVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
@@ -25,9 +25,11 @@ const addVideo = asyncHandler(async (req, res) => {
   if (!thumbnailLocalPath) {
     throw new ApiError(400, "not found thumbnailLocalPath");
   }
+console.log("filepath", videoFileLocalPath);
 
-  const videoFile = await uploadOnCloudinary(videoFileLocalPath);
+  const videoFile = await uploadVideoOnVdoCipher(videoFileLocalPath);
   const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
+  console.log("/??", videoFile);
 
   if (!videoFile) {
     throw new ApiError(400, "Error while uploading video");
@@ -396,4 +398,26 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 
-export { getAllVideos, addVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus };
+const generateVideoUrl = asyncHandler(async (req, res) => {
+  const { videoId } = req.body;
+  console.log(videoId);
+  try {
+    
+      const response = await axios.post(
+        `https://dev.vdocipher.com/api/videos/${videoId}/otp`,
+        { ttl: 300 },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`,
+          },
+        }
+      );
+    res.json(response.data);
+  } catch (error) {
+    throw new ApiError(500, "Failed to generate video URL");
+  }
+});
+
+export { generateVideoUrl, getAllVideos, addVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus };

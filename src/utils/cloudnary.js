@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 
@@ -14,7 +15,7 @@ const uploadOnCloudinary = async (localFilePath) => {
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: 'auto'
         })
-        // console.log("file is uploaded on cloudinary", response.url);
+        console.log("file is uploaded on cloudinary", response);
         fs.unlinkSync(localFilePath)
         return response;
 
@@ -36,4 +37,36 @@ const deleteOnCloudinary = async (public_id, resource_type = "image") => {
     }
 }
 
-export { uploadOnCloudinary, deleteOnCloudinary }
+const uploadVideoOnVdoCipher = async (videoFilePath) => {
+    if (!videoFilePath) return null;
+
+    try {
+        console.log("videoFilePath", videoFilePath);
+        const uploadRequestResponse = await axios.post(
+            'https://dev.vdocipher.com/api/videos',
+            {}, // Ensure the payload is correct as per VdoCipher API documentation
+            {
+                headers: {
+                    Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`
+                }
+            }
+        );
+
+        const { uploadLink, videoId } = uploadRequestResponse.data;
+        const videoFile = fs.createReadStream(videoFilePath);
+
+        const uploadResponse = await axios.put(uploadLink, videoFile, {
+            headers: {
+                'Content-Type': 'application/octet-stream'
+            }
+        });
+
+        console.log("Video uploaded successfully", uploadResponse.data);
+        return uploadResponse.data;
+    } catch (error) {
+        console.log("Video upload failed on VdoCipher", error);
+        return error;
+    }
+};
+
+export { uploadOnCloudinary, deleteOnCloudinary,uploadVideoOnVdoCipher }

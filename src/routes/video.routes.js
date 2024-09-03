@@ -8,6 +8,7 @@ import {
     addVideo,
     togglePublishStatus,
     updateVideo,
+    generateVideoUrl,
 } from "../controllers/video.controller.js"
 const router = Router();
 
@@ -34,4 +35,6 @@ router.route("/v/:videoId")
     .delete(verifyJWT, deleteVideo)
 
 router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus)
+router.route("/getVdoCipherOTP").post(generateVideoUrl);
+
 export default router;
