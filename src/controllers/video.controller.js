@@ -25,11 +25,13 @@ const addVideo = asyncHandler(async (req, res) => {
   if (!thumbnailLocalPath) {
     throw new ApiError(400, "not found thumbnailLocalPath");
   }
-console.log("filepath", videoFileLocalPath);
+  console.log("filepath", videoFileLocalPath);
 
-  const videoFile = await uploadVideoOnVdoCipher(videoFileLocalPath);
+  const videoFile = await uploadOnCloudinary(videoFileLocalPath);
+  const videoFilePath = videoFile.secure_url;
+  const VDOFile = await uploadVideoOnVdoCipher(videoFilePath, title);
   const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-  console.log("/??", videoFile);
+  console.log("uploadVideoOnVdoCipher", VDOFile);
 
   if (!videoFile) {
     throw new ApiError(400, "Error while uploading video");
@@ -42,10 +44,12 @@ console.log("filepath", videoFileLocalPath);
   const video = await Video.create({
     title,
     description,
-    duration: videoFile.duration,
+    // duration: videoFile.duration,
+    duration: 52.336,
     videoFile: {
       url: videoFile.url,
       public_id: videoFile.public_id,
+      videoId: "40198c810ce8440590df5f842ba1dce4"
     },
     thumbnail: {
       url: thumbnail.url,
@@ -147,7 +151,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        "videoFile.url": 1,
+        "videoFile.videoId": 1,
         title: 1,
         description: 1,
         views: 1,
@@ -402,18 +406,18 @@ const generateVideoUrl = asyncHandler(async (req, res) => {
   const { videoId } = req.body;
   console.log(videoId);
   try {
-    
-      const response = await axios.post(
-        `https://dev.vdocipher.com/api/videos/${videoId}/otp`,
-        { ttl: 300 },
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`,
-          },
-        }
-      );
+
+    const response = await axios.post(
+      `https://dev.vdocipher.com/api/videos/${videoId}/otp`,
+      { ttl: 300 },
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`,
+        },
+      }
+    );
     res.json(response.data);
   } catch (error) {
     throw new ApiError(500, "Failed to generate video URL");

@@ -2,6 +2,8 @@ import axios from 'axios';
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 
+import request from 'request';
+import { ApiError } from './apiError.js';
 // Configuration
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -37,36 +39,38 @@ const deleteOnCloudinary = async (public_id, resource_type = "image") => {
     }
 }
 
-const uploadVideoOnVdoCipher = async (videoFilePath) => {
+const uploadVideoOnVdoCipher = async (videoFilePath, title) => {
     if (!videoFilePath) return null;
 
-    try {
-        console.log("videoFilePath", videoFilePath);
-        const uploadRequestResponse = await axios.post(
-            'https://dev.vdocipher.com/api/videos',
-            {}, // Ensure the payload is correct as per VdoCipher API documentation
-            {
-                headers: {
-                    Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`
-                }
-            }
-        );
+console.log("videoFilePath",videoFilePath);
+const titles = '2024-09-03 18-26-08.mkv'
 
-        const { uploadLink, videoId } = uploadRequestResponse.data;
-        const videoFile = fs.createReadStream(videoFilePath);
-
-        const uploadResponse = await axios.put(uploadLink, videoFile, {
+try {
+    const response = await axios.put(
+        `https://dev.vdocipher.com/api/videos?title=${titles}`,
+        {
+            folderId : '4c3384d459cc41b08e9217be5cd8b524',
+            // url: videoFilePath,
+            // title: '2024-09-03 18-26-08.mkv',
+        },
+        {
             headers: {
-                'Content-Type': 'application/octet-stream'
-            }
-        });
+                Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`,
 
-        console.log("Video uploaded successfully", uploadResponse.data);
-        return uploadResponse.data;
-    } catch (error) {
-        console.log("Video upload failed on VdoCipher", error);
-        return error;
-    }
+            },
+        }
+    );
+    console.log("loggggg",  response);
+    
+    return response.data;
+} catch (error) {
+    throw new ApiError(
+        error.response?.status || 500,
+        `VdoCipher Import Error: ${error.response?.data?.message || error.message}`
+    );
+}
 };
+
+
 
 export { uploadOnCloudinary, deleteOnCloudinary,uploadVideoOnVdoCipher }

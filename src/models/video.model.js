@@ -7,6 +7,7 @@ const videoSchema = new Schema(
             type: {
                 url: String,
                 public_id: String,
+                videoId: String,
             },
             required: true,
         },
