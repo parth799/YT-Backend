@@ -28,10 +28,10 @@ const addVideo = asyncHandler(async (req, res) => {
   console.log("filepath", videoFileLocalPath);
 
   const videoFile = await uploadOnCloudinary(videoFileLocalPath);
-  const videoFilePath = videoFile.secure_url;
-  const VDOFile = await uploadVideoOnVdoCipher(videoFilePath, title);
+  // const videoFilePath = videoFile.secure_url;
+  // const VDOFile = await uploadVideoOnVdoCipher(videoFilePath, title);
   const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-  console.log("uploadVideoOnVdoCipher", VDOFile);
+  // console.log("uploadVideoOnVdoCipher", VDOFile);
 
   if (!videoFile) {
     throw new ApiError(400, "Error while uploading video");

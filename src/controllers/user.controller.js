@@ -202,7 +202,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         "Access token refreshed"
       )
     )
-
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {

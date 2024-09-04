@@ -42,35 +42,32 @@ const deleteOnCloudinary = async (public_id, resource_type = "image") => {
 const uploadVideoOnVdoCipher = async (videoFilePath, title) => {
     if (!videoFilePath) return null;
 
-console.log("videoFilePath",videoFilePath);
-const titles = '2024-09-03 18-26-08.mkv'
+    console.log("videoFilePath", videoFilePath);
+    const titles = '2024-09-03 18-26-08.mkv'
 
-try {
-    const response = await axios.put(
-        `https://dev.vdocipher.com/api/videos?title=${titles}`,
-        {
-            folderId : '4c3384d459cc41b08e9217be5cd8b524',
-            // url: videoFilePath,
-            // title: '2024-09-03 18-26-08.mkv',
-        },
-        {
-            headers: {
-                Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`,
-
+    try {
+        const response = await axios.put(
+            `https://dev.vdocipher.com/api/videos?title=${titles}`,
+            {
+                folderId: '4c3384d459cc41b08e9217be5cd8b524',
+                // url: videoFilePath,
+                // title: '2024-09-03 18-26-08.mkv',
             },
-        }
-    );
-    console.log("loggggg",  response);
-    
-    return response.data;
-} catch (error) {
-    throw new ApiError(
-        error.response?.status || 500,
-        `VdoCipher Import Error: ${error.response?.data?.message || error.message}`
-    );
-}
+            {
+                headers: {
+                    Authorization: `Apisecret ${process.env.VDOCIPHER_API_SECRET}`,
+                },
+            }
+        );
+        console.log("loggggg", response);
+
+        return response.data;
+    } catch (error) {
+        throw new ApiError(
+            error.response?.status || 500,
+            `VdoCipher Import Error: ${error.response?.data?.message || error.message}`
+        );
+    }
 };
 
-
-
-export { uploadOnCloudinary, deleteOnCloudinary,uploadVideoOnVdoCipher }
+export { uploadOnCloudinary, deleteOnCloudinary, uploadVideoOnVdoCipher }
