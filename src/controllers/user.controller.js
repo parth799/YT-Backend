@@ -106,6 +106,10 @@ const googleAuth = asyncHandler(async (req, res) => {
     avatar: {
       url: avatar
     },
+    coverImage: {
+      public_id: "hlllpu6l8tlggcbjea80" || "",
+      url: "https://res.cloudinary.com/duhezhev3/image/upload/v1725515059/hlllpu6l8tlggcbjea80.png" || ""
+    },
     email: email,
     password: email,
     username: username,
