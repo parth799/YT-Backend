@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { ApiError } from "../utils/apiError.js";
 
+
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -91,6 +92,59 @@ const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(200, createUser, "User Registerd Seccesfuly"));
 });
+
+const googleAuth = asyncHandler(async (req, res) => {
+  const { email, username, fullName, avatar } = req.body
+  if (!email) {
+    throw new ApiError(500, "value is emty!")
+  }
+
+  console.log("value,", email, username, fullName, avatar);
+
+  const user = await User.create({
+    fullName: fullName,
+    avatar: {
+      url: avatar
+    },
+    email: email,
+    password: email,
+    username: username,
+  });
+
+  const users = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+
+  if (!users) {
+    throw new ApiError(405, "User not found")
+  }
+
+  const { refreshToken, accessToken } = await generateAccessAndRefreshTokens(
+    users._id
+  );
+
+  const loggedInUser = await User.findById(users._id).select(
+    "-password -refreshToken"
+  );
+
+  if (!loggedInUser) {
+    throw new ApiError(500, "Something wet wrong whhile registerng the user!");
+  }
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None"
+  };
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(200, {
+      user: loggedInUser,
+      accessToken,
+      refreshToken,
+    }, "User Registerd Seccesfuly"));
+})
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
@@ -236,7 +290,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   const { fullName, email } = req.body;
   console.log(fullName, email);
-  
+
   if (!fullName || !email) {
     throw new ApiError(400, "Name and email are required");
   }
@@ -484,4 +538,5 @@ export {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  googleAuth
 };
