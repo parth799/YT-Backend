@@ -8,7 +8,13 @@ const tweetSchema = new Schema({
     owner: {
         type: Schema.Types.ObjectId,
         ref: "User"
-    }
+    },
+    CommunityPostImage: {
+        type: {
+            url: String,
+            public_id: String,
+        },
+    },
 }, {timestamps: true})
 
 
