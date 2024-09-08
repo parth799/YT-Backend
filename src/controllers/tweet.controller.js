@@ -60,11 +60,11 @@ const updateTweet = asyncHandler(async (req, res) => {
       throw new ApiError(400, "You are not authorized to edit this tweet");
     }
   
-    // Prepare to upload new image if provided
     let updatedCommunityPostImage = tweet.CommunityPostImage;
+  console.log("req.file?.path",req.file?.path);
   
     if (req.file?.path) {
-      const communityImage = await uploadOnCloudinary(req.file.path);
+      const communityImage = await uploadOnCloudinary(req.file?.path);
       if (!communityImage) {
         throw new ApiError(400, "Error uploading image");
       }
@@ -72,11 +72,9 @@ const updateTweet = asyncHandler(async (req, res) => {
         url: communityImage.url,
         public_id: communityImage.public_id,
       };
-      // Delete old image from Cloudinary
       await deleteOnCloudinary(tweet.CommunityPostImage.public_id);
     }
-  
-    // Update tweet content and image
+
     const updatedTweet = await Tweet.findByIdAndUpdate(
       tweetId,
       {
