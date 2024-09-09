@@ -94,12 +94,10 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const googleAuth = asyncHandler(async (req, res) => {
-  const { email, username, fullName, avatar } = req.body
+  const { email, username, fullName, avatar, password } = req.body
   if (!email) {
     throw new ApiError(500, "value is emty!")
   }
-
-  console.log("value,", email, username, fullName, avatar);
 
   const user = await User.create({
     fullName: fullName,
@@ -111,7 +109,7 @@ const googleAuth = asyncHandler(async (req, res) => {
       url: "https://res.cloudinary.com/duhezhev3/image/upload/v1725515059/hlllpu6l8tlggcbjea80.png" || ""
     },
     email: email,
-    password: email,
+    password: password,
     username: username,
   });
 
