@@ -528,6 +528,31 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+const stopeWatchHistory = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  console.log(userId);
+
+  const user = await User.findById(userId);
+
+  const stopeHistory = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        stopeWatchHistory: !user?.stopeWatchHistory
+      }
+    },
+    { new: true }
+  )
+
+  if (!stopeHistory) {
+    throw new ApiError(500, "failed to stope watch history")
+  }
+
+  return res.status(200).json(new ApiResponse(200, { stopeWatchHistory: stopeHistory.stopeWatchHistory }, "watch History stope successfully!"))
+})
+
+
+
 export {
   registerUser,
   loginUser,
@@ -540,5 +565,6 @@ export {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
-  googleAuth
+  googleAuth,
+  stopeWatchHistory
 };

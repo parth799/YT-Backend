@@ -44,6 +44,10 @@ const userSchema = new Schema({
             ref: "Video"
         }
     ],
+    stopeWatchHistory: {
+        type: Boolean,
+        defaultValue: false,
+    },
     password: {
         type: String,
         required: [true, 'Password is required'],

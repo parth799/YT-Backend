@@ -9,6 +9,7 @@ import {
   logoutUser,
   refreshAccessToken,
   registerUser,
+  stopeWatchHistory,
   updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
@@ -50,5 +51,5 @@ router
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 router.route("/watch-history").get(verifyJWT, getWatchHistory);
 router.route("/google").post(googleAuth);
-
+router.route("/toggle/stophistory/:userId").patch(verifyJWT, stopeWatchHistory)
 export default router;

@@ -35,16 +35,15 @@ const createTweet = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Failed to create tweet");
     }
 
-    return res.status(201).json(new ApiResponse(201, tweet, "Tweet created successfully!"));
+    return res.status(201).json(new ApiResponse(201, tweet, "Community created successfully!"));
 });
-
 
 const updateTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;
     const { content } = req.body;
   
     if (!isValidObjectId(tweetId)) {
-      throw new ApiError(400, "Invalid tweet id");
+      throw new ApiError(400, "Invalid Community id");
     }
   
     if (!content) {
@@ -53,11 +52,11 @@ const updateTweet = asyncHandler(async (req, res) => {
   
     const tweet = await Tweet.findById(tweetId);
     if (!tweet) {
-      throw new ApiError(404, "Tweet not found");
+      throw new ApiError(404, "Community not found");
     }
   
     if (tweet.owner.toString() !== req.user?._id.toString()) {
-      throw new ApiError(400, "You are not authorized to edit this tweet");
+      throw new ApiError(400, "You are not authorized to edit this Community");
     }
   
     let updatedCommunityPostImage = tweet.CommunityPostImage;
@@ -87,12 +86,12 @@ const updateTweet = asyncHandler(async (req, res) => {
     );
   
     if (!updatedTweet) {
-      throw new ApiError(404, "Failed to update tweet");
+      throw new ApiError(404, "Failed to update Community");
     }
   
     return res
       .status(200)
-      .json(new ApiResponse(200, updatedTweet, "Tweet updated successfully!"));
+      .json(new ApiResponse(200, updatedTweet, "Community updated successfully!"));
   });
   
 
@@ -100,25 +99,25 @@ const deleteTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;
 
     if (!isValidObjectId(tweetId)) {
-        throw new ApiError(400, "Invalid tweet id");
+        throw new ApiError(400, "Invalid Community id");
     }
     const tweet = await Tweet.findById(tweetId);
 
     if (!tweet) {
-        throw new ApiError(404, "Tweet not found");
+        throw new ApiError(404, "Community not found");
     }
 
     if (tweet.owner.toString() !== req.user?._id.toString()) {
-        throw new ApiError(400, "you are not authorized to delete this tweet");
+        throw new ApiError(400, "you are not authorized to delete this Community");
     }
 
     const tweetDelete = await Tweet.findByIdAndDelete(tweet._id);
 
     if (!tweetDelete) {
-        throw new ApiError(404, "delete tweet not found");
+        throw new ApiError(404, "delete Community not found");
     }
     await deleteOnCloudinary(tweet.CommunityPostImage.public_id)
-    return res.status(200).json(new ApiResponse(200, {}, "Tweet deleted successfully!"));
+    return res.status(200).json(new ApiResponse(200, {}, "Community deleted successfully!"));
 })
 
 const getUserTweets = asyncHandler(async (req, res) => {

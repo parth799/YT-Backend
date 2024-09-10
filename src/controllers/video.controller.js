@@ -169,17 +169,29 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(500, "faied to fetch video")
   }
 
+
+
+  console.log("User.stopeWatchHistory", req.user?.stopeWatchHistory);
+
+
   await Video.findByIdAndUpdate(videoId, {
     $inc: {
       views: 1
     }
   })
 
-  await User.findByIdAndUpdate(req.user?._id, {
-    $addToSet: {
-      watchHistory: videoId
-    }
-  })
+  if (!req.user?.stopeWatchHistory) {
+    await User.findByIdAndUpdate(req.user?._id, {
+      $addToSet: {
+        watchHistory: videoId
+      }
+    });
+    console.log(`Watch history updated for user: ${req.user?._id}`);
+  } else {
+    console.log(`Watch history is stopped for user: ${req.user?._id}`);
+  }
+
+
   return res.status(200).json(new ApiResponse(200, video[0], "video fetched successfully"));
 })
 
