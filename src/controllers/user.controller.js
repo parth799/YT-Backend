@@ -530,8 +530,6 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 
 const stopeWatchHistory = asyncHandler(async (req, res) => {
   const { userId } = req.params;
-  console.log(userId);
-
   const user = await User.findById(userId);
 
   const stopeHistory = await User.findByIdAndUpdate(
@@ -551,7 +549,22 @@ const stopeWatchHistory = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, { stopeWatchHistory: stopeHistory.stopeWatchHistory }, "watch History stope successfully!"))
 })
 
-
+const clearWatchHistory = asyncHandler(async (req, res) => {
+  const userId = new mongoose.Types.ObjectId(req.user._id);
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        watchHistory: []
+      }
+    },
+    { new: true }
+  )
+  if (!user) {
+    throw new ApiError(500, "failed to clear watch history")
+  }
+  return res.status(200).json(new ApiResponse(200, user, "watch History cleared successfully!"))
+})
 
 export {
   registerUser,
@@ -566,5 +579,6 @@ export {
   getUserChannelProfile,
   getWatchHistory,
   googleAuth,
-  stopeWatchHistory
+  stopeWatchHistory,
+  clearWatchHistory
 };

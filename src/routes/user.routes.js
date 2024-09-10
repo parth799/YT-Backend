@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changeCurrentPassword,
+  clearWatchHistory,
   getCurrentUser,
   getUserChannelProfile,
   getWatchHistory,
@@ -52,4 +53,5 @@ router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 router.route("/watch-history").get(verifyJWT, getWatchHistory);
 router.route("/google").post(googleAuth);
 router.route("/toggle/stophistory/:userId").patch(verifyJWT, stopeWatchHistory)
+router.route("/clear-history").patch(verifyJWT, clearWatchHistory)
 export default router;
