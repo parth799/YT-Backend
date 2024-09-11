@@ -169,11 +169,6 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(500, "faied to fetch video")
   }
 
-
-
-  console.log("User.stopeWatchHistory", req.user?.stopeWatchHistory);
-
-
   await Video.findByIdAndUpdate(videoId, {
     $inc: {
       views: 1
@@ -190,7 +185,6 @@ const getVideoById = asyncHandler(async (req, res) => {
   } else {
     console.log(`Watch history is stopped for user: ${req.user?._id}`);
   }
-
 
   return res.status(200).json(new ApiResponse(200, video[0], "video fetched successfully"));
 })
@@ -331,26 +325,14 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const isAtlasSearchAvailable = process.env.USE_ATLAS_SEARCH === 'true';
 
   if (query) {
-    if (isAtlasSearchAvailable) {
-      pipeline.push({
-        $search: {
-          index: "search-videos",
-          text: {
-            query: query,
-            path: ["title", "description"],
-          },
-        },
-      });
-    } else {
-      pipeline.push({
-        $match: {
-          $or: [
-            { title: { $regex: query, $options: "i" } },
-            { description: { $regex: query, $options: "i" } },
-          ],
-        },
-      });
-    }
+    pipeline.push({
+      $match: {
+        $or: [
+          { title: { $regex: query, $options: "i" } },
+          { description: { $regex: query, $options: "i" } },
+        ],
+      },
+    });
   }
 
   if (userId) {

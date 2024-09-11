@@ -8,6 +8,7 @@ import {
   googleAuth,
   loginUser,
   logoutUser,
+  paymentManager,
   refreshAccessToken,
   registerUser,
   stopeWatchHistory,
@@ -54,4 +55,5 @@ router.route("/watch-history").get(verifyJWT, getWatchHistory);
 router.route("/google").post(googleAuth);
 router.route("/toggle/stophistory/:userId").patch(verifyJWT, stopeWatchHistory)
 router.route("/clear-history").patch(verifyJWT, clearWatchHistory)
+router.route("/payment").post(verifyJWT, paymentManager)
 export default router;

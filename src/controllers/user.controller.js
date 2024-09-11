@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { ApiError } from "../utils/apiError.js";
+import Stripe from "stripe";
 
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -566,6 +567,23 @@ const clearWatchHistory = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user, "watch History cleared successfully!"))
 })
 
+const stripe = Stripe('sk_test_51Pt572DcxgPqDrQh11uhq6RG00a6ckao0Djdm7Vi6c5DlW4XGEYBCNqqkbggtm2bshV0jH3Bou9O2Xpnmys1uIB500UV0foNnD');
+
+const paymentManager = asyncHandler(async (req, res) => {
+  const { username, channelId } = req.body;
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [{
+      price: 'price_1PtT1cDcxgPqDrQhXXvtcD3C',
+      quantity: 1,
+    }],
+    mode: "payment",
+    success_url: `http://localhost:5173/channel/${username}`,
+    cancel_url: `http://localhost:5173/channel/${username}`,
+  });
+  res.json({ id: session.id })
+})
+
 export {
   registerUser,
   loginUser,
@@ -580,5 +598,6 @@ export {
   getWatchHistory,
   googleAuth,
   stopeWatchHistory,
-  clearWatchHistory
+  clearWatchHistory,
+  paymentManager
 };
