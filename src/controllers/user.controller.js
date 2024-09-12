@@ -450,7 +450,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         subcribersCount: 1,
         channelsSubscribedToCount: 1,
         isSubscribed: 1,
-        joinUsers:1
+        joinUsers: 1
       }
     }
   ]);
@@ -560,11 +560,9 @@ const clearWatchHistory = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user, "watch History cleared successfully!"))
 })
 
-const stripe = Stripe(process.env.STRIPE_KEY);
-
 const paymentManager = asyncHandler(async (req, res) => {
   const { username, channelId } = req.body;
-  const user  = req.user;
+  const user = req.user;
 
   if (!username || !channelId) {
     throw new ApiError(400, "Username or channelId is missing");
@@ -572,7 +570,7 @@ const paymentManager = asyncHandler(async (req, res) => {
 
   console.log("User info:", user);
   const userData = await User.findById(channelId);
-  
+
   if (!userData) {
     throw new ApiError(404, "User not found");
   }
@@ -581,6 +579,7 @@ const paymentManager = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "You have already joined this channel" });
   }
 
+  const stripe = Stripe(process.env.STRIPE_KEY);
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [{
