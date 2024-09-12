@@ -31,7 +31,6 @@ const registerUser = asyncHandler(async (req, res) => {
   // .json({messge:"hiiiii"});
 
   const { fullName, email, username, password } = req.body;
-  console.log("email :", fullName, email, username, password);
 
   if (
     [fullName, email, username, password].some((field) => field?.trim() === "")
@@ -59,9 +58,6 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!avatarLocalPath) {
     throw new ApiError(400, " Avatarfils is reqired!");
   }
-  console.log("---->", avatarLocalPath);
-  console.log("----<<", coverImageLocalPath);
-
 
   const avatar = await uploadOnCloudinary(avatarLocalPath).catch((error) => console.log(error))
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
@@ -88,7 +84,6 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!createUser) {
     throw new ApiError(500, "Something wet wrong whhile registerng the user!");
   }
-  console.log("createUser", createUser)
   return res
     .status(201)
     .json(new ApiResponse(200, createUser, "User Registerd Seccesfuly"));
@@ -292,7 +287,6 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   }
 
   const { fullName, email } = req.body;
-  console.log(fullName, email);
 
   if (!fullName || !email) {
     throw new ApiError(400, "Name and email are required");
@@ -455,12 +449,11 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         coverImage: 1,
         subcribersCount: 1,
         channelsSubscribedToCount: 1,
-        isSubscribed: 1
+        isSubscribed: 1,
+        joinUsers:1
       }
     }
   ]);
-
-  console.log(channel);
 
   if (!channel?.length) {
     throw new ApiError(404, "channel does not exist!");
@@ -567,10 +560,27 @@ const clearWatchHistory = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, user, "watch History cleared successfully!"))
 })
 
-const stripe = Stripe('sk_test_51Pt572DcxgPqDrQh11uhq6RG00a6ckao0Djdm7Vi6c5DlW4XGEYBCNqqkbggtm2bshV0jH3Bou9O2Xpnmys1uIB500UV0foNnD');
+const stripe = Stripe(process.env.STRIPE_KEY);
 
 const paymentManager = asyncHandler(async (req, res) => {
   const { username, channelId } = req.body;
+  const user  = req.user;
+
+  if (!username || !channelId) {
+    throw new ApiError(400, "Username or channelId is missing");
+  }
+
+  console.log("User info:", user);
+  const userData = await User.findById(channelId);
+  
+  if (!userData) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (userData.joinUsers.includes(channelId)) {
+    return res.status(400).json({ message: "You have already joined this channel" });
+  }
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [{
@@ -581,8 +591,19 @@ const paymentManager = asyncHandler(async (req, res) => {
     success_url: `http://localhost:5173/channel/${username}`,
     cancel_url: `http://localhost:5173/channel/${username}`,
   });
-  res.json({ id: session.id })
-})
+
+  if (!session) {
+    throw new ApiError(500, "Failed to create payment session");
+  }
+
+  if (session) {
+    userData.joinUsers.push(channelId);
+    await userData.save();
+  }
+
+  res.status(200).json({ id: session.id });
+});
+
 
 export {
   registerUser,
