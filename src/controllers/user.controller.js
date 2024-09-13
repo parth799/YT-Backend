@@ -562,21 +562,14 @@ const clearWatchHistory = asyncHandler(async (req, res) => {
 
 const paymentManager = asyncHandler(async (req, res) => {
   const { username, channelId } = req.body;
-  const user = req.user;
 
   if (!username || !channelId) {
     throw new ApiError(400, "Username or channelId is missing");
   }
+  const channel = await User.findById(channelId);
 
-  console.log("User info:", user);
-  const userData = await User.findById(channelId);
-
-  if (!userData) {
-    throw new ApiError(404, "User not found");
-  }
-
-  if (userData.joinUsers.includes(channelId)) {
-    return res.status(400).json({ message: "You have already joined this channel" });
+  if (!channel) {
+    throw new ApiError(404, "Channel not found");
   }
 
   const stripe = Stripe(process.env.STRIPE_KEY);
@@ -595,12 +588,17 @@ const paymentManager = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to create payment session");
   }
 
-  if (session) {
-    userData.joinUsers.push(channelId);
-    await userData.save();
+  const loginUserId = req.user._id;
+
+  if (channelId.toString() !== loginUserId.toString()) {
+    await User.findByIdAndUpdate(
+      channelId,
+      { $addToSet: { joinUsers: loginUserId } });
+  } else {
+    return res.status(400).json({ message: "You cannot join your own channel" });
   }
 
-  res.status(200).json({ id: session.id });
+  res.status(200).json({ id: session.id, message: "Payment session created successfully" });
 });
 
 

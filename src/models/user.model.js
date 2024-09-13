@@ -50,8 +50,8 @@ const userSchema = new Schema({
     },
     joinUsers: [
         {
-            type: String,
-            unique: true,
+            type: Schema.Types.ObjectId, 
+            ref: "User",
         }
     ],
     password: {
@@ -61,7 +61,7 @@ const userSchema = new Schema({
     refreshToken: {
         type: String
     }
- 
+
 }, { timestamps: true })
 
 userSchema.pre("save", async function (next) {
