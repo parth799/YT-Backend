@@ -77,6 +77,7 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     password,
     username: username.toLowerCase(),
+    joinUsers: null
   });
   const createUser = await User.findById(user._id).select(
     "-password -refreshToken"
@@ -107,6 +108,7 @@ const googleAuth = asyncHandler(async (req, res) => {
     email: email,
     password: password,
     username: username,
+    joinUsers: null
   });
 
   const users = await User.findOne({

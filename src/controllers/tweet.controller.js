@@ -41,59 +41,59 @@ const createTweet = asyncHandler(async (req, res) => {
 const updateTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;
     const { content } = req.body;
-  
+
     if (!isValidObjectId(tweetId)) {
-      throw new ApiError(400, "Invalid Community id");
+        throw new ApiError(400, "Invalid Community id");
     }
-  
+
     if (!content) {
-      throw new ApiError(400, "Content cannot be empty");
+        throw new ApiError(400, "Content cannot be empty");
     }
-  
+
     const tweet = await Tweet.findById(tweetId);
     if (!tweet) {
-      throw new ApiError(404, "Community not found");
+        throw new ApiError(404, "Community not found");
     }
-  
+
     if (tweet.owner.toString() !== req.user?._id.toString()) {
-      throw new ApiError(400, "You are not authorized to edit this Community");
+        throw new ApiError(400, "You are not authorized to edit this Community");
     }
-  
+
     let updatedCommunityPostImage = tweet.CommunityPostImage;
-  console.log("req.file?.path",req.file?.path);
-  
+    console.log("req.file?.path", req.file?.path);
+
     if (req.file?.path) {
-      const communityImage = await uploadOnCloudinary(req.file?.path);
-      if (!communityImage) {
-        throw new ApiError(400, "Error uploading image");
-      }
-      updatedCommunityPostImage = {
-        url: communityImage.url,
-        public_id: communityImage.public_id,
-      };
-      await deleteOnCloudinary(tweet.CommunityPostImage.public_id);
+        const communityImage = await uploadOnCloudinary(req.file?.path);
+        if (!communityImage) {
+            throw new ApiError(400, "Error uploading image");
+        }
+        updatedCommunityPostImage = {
+            url: communityImage.url,
+            public_id: communityImage.public_id,
+        };
+        await deleteOnCloudinary(tweet.CommunityPostImage.public_id);
     }
 
     const updatedTweet = await Tweet.findByIdAndUpdate(
-      tweetId,
-      {
-        $set: {
-          content,
-          CommunityPostImage: updatedCommunityPostImage,
+        tweetId,
+        {
+            $set: {
+                content,
+                CommunityPostImage: updatedCommunityPostImage,
+            },
         },
-      },
-      { new: true, runValidators: true }
+        { new: true, runValidators: true }
     );
-  
+
     if (!updatedTweet) {
-      throw new ApiError(404, "Failed to update Community");
+        throw new ApiError(404, "Failed to update Community");
     }
-  
+
     return res
-      .status(200)
-      .json(new ApiResponse(200, updatedTweet, "Community updated successfully!"));
-  });
-  
+        .status(200)
+        .json(new ApiResponse(200, updatedTweet, "Community updated successfully!"));
+});
+
 
 const deleteTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;

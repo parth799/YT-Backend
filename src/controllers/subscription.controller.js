@@ -7,8 +7,8 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 
 const toggleSubscription = asyncHandler(async (req, res) => {
     const { channelId } = req.params;
-    console.log("channelId",channelId);
-    
+    console.log("channelId", channelId);
+
     if (!isValidObjectId(channelId)) {
         throw new ApiError(400, "Invalid channelId")
     }
@@ -137,7 +137,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                     {
                         $addFields: {
                             latestVideo: {
-                                $arrayElemAt: ["$videos", -1] 
+                                $arrayElemAt: ["$videos", -1]
                             }
                         }
                     }
