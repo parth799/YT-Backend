@@ -14,12 +14,21 @@ For the backend:
 https://github.com/parth799/YT-Backend.git
 ```
 
-## Installation
+## Backend Installation
 
-Use the package manager [pnpm](https://pnpm.io/installation) to install the project dependencies.
+For the frontend part, clone the frontend repository mentioned above and follow these steps:
+
+1. Navigate to the `01Backend` directory.
+2. Install the project dependencies using [pnpm](https://pnpm.io/installation).
 
 ```bash
 pnpm install
+```
+
+3. Run the frontend locally using the following command:
+
+```bash
+pnpm run dev
 ```
 
 ## Database Model
